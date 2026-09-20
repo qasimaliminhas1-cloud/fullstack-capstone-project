@@ -1,0 +1,5 @@
+◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+Connected to MongoDB
+Inserted 16 documents into the gifts collection
+Total documents in giftdb.gifts: 16
+Connection closed

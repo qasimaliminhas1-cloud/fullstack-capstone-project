@@ -1,0 +1,3 @@
+$ curl -X POST http://localhost:3060/api/auth/register -H "Content-Type: application/json" -d {"firstName":"Shahzaib","lastName":"Ali","email":"shahzaib@giftlink.com","password":"test1234"}
+
+{"authtoken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNmFhMTVmZDQ1YmI5MzgxNDlhODhkMzE3In0sImlhdCI6MTc4ODk2MDcyNX0.vNG8V1KzowIPvUAifJFf7JYCt57Hn7_RApqlB_rF3nw","email":"shahzaib@giftlink.com"}

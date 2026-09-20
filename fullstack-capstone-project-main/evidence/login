@@ -1,0 +1,3 @@
+$ curl -X POST http://localhost:3060/api/auth/login -H "Content-Type: application/json" -d {"email":"shahzaib@giftlink.com","password":"test1234"}
+
+{"authtoken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNmFhMTVmZDQ1YmI5MzgxNDlhODhkMzE3In0sImlhdCI6MTc4ODk2MDczMH0.-UrxQ-HxEPdDlG1TbrFGVo8zrNPDRlc--LAnGXz6zIw","userName":"Shahzaib","userEmail":"shahzaib@giftlink.com"}
