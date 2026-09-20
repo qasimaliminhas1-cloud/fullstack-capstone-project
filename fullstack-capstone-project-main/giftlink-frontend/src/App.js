@@ -1,19 +1,28 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import LandingPage from './components/LandingPage/LandingPage';
-import RegisterPage from './components/RegisterPage/RegisterPage';
+import Navbar from './components/Navbar/Navbar';
+import MainPage from './components/MainPage/MainPage';
 import LoginPage from './components/LoginPage/LoginPage';
-import './App.css';
+import RegisterPage from './components/RegisterPage/RegisterPage';
+import DetailsPage from './components/DetailsPage/DetailsPage';
+import SearchPage from './components/SearchPage/SearchPage';
+import Profile from './components/Profile/Profile';
 
 function App() {
-    return (
-        <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/app" element={<LandingPage />} />
-            <Route path="/app/register" element={<RegisterPage />} />
-            <Route path="/app/login" element={<LoginPage />} />
-        </Routes>
-    );
+  return (
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/app" element={<MainPage />} />
+        <Route path="/app/login" element={<LoginPage />} />
+        <Route path="/app/register" element={<RegisterPage />} />
+        <Route path="/app/product/:id" element={<DetailsPage />} />
+        <Route path="/app/search" element={<SearchPage />} />
+        <Route path="/app/profile" element={<Profile />} />
+      </Routes>
+    </>
+  );
 }
 
 export default App;
