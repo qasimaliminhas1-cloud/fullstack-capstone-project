@@ -1,47 +1,22 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const natural = require('natural');
-const logger = require('./logger');
+const router = express.Router();
+const Sentiment = require('sentiment');
+const sentiment = new Sentiment();
 
-const app = express();
-const port = process.env.PORT || 3050;
-
-app.use(express.json());
-app.use(cors());
-
-// Sentiment analysis endpoint
-app.post('/sentiment', async (req, res) => {
-    const { sentence } = req.body;
-
-    if (!sentence) {
-        logger.error('No sentence provided');
-        return res.status(400).json({ error: 'No sentence provided' });
-    }
-
-    // Initialize the sentiment analyzer with the Natural library
-    const Analyzer = natural.SentimentAnalyzer;
-    const stemmer = natural.PorterStemmer;
-    const analyzer = new Analyzer('English', stemmer, 'afinn');
-
+// POST /api/sentiment or GET / - Evaluate sentiment score
+router.post('/', async (req, res) => {
     try {
-        const analysisResult = analyzer.getSentiment(sentence.split(' '));
-
-        let sentiment = 'neutral';
-        if (analysisResult < 0) {
-            sentiment = 'negative';
-        } else if (analysisResult > 0.33) {
-            sentiment = 'positive';
+        const { sentence } = req.body;
+        if (!sentence) {
+            return res.status(400).json({ error: 'Sentence parameter is required' });
         }
 
-        logger.info('Sentiment analysis result: ' + analysisResult);
-        res.status(200).json({ sentimentScore: analysisResult, sentiment: sentiment });
+        const result = sentiment.analyze(sentence);
+        res.json({ score: result.score, comparative: result.comparative, tokens: result.tokens });
     } catch (error) {
-        logger.error('Error performing sentiment analysis', error);
-        res.status(500).json({ message: 'Error performing sentiment analysis' });
+        console.error('Error analyzing sentiment:', error);
+        res.status(500).send('Error analyzing sentiment');
     }
 });
 
-app.listen(port, () => {
-    console.log(`Sentiment analysis server running on port ${port}`);
-});
+module.exports = router;
