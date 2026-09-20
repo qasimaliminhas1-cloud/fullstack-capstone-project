@@ -1,103 +1,103 @@
 const express = require('express');
+const router = express.Router();
+const connectToDatabase = require('../models/db');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
-const connectToDatabase = require('../models/db');
-const logger = require('../logger');
 
-const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'secret_token';
 
 // Register a new user
 router.post('/register', async (req, res) => {
     try {
         const db = await connectToDatabase();
-        const collection = db.collection('users');
+        const collection = db.collection("users");
 
-        const existingEmail = await collection.findOne({ email: req.body.email });
-        if (existingEmail) {
-            return res.status(400).json({ error: 'Email already registered' });
+        const { email, password, firstName, lastName } = req.body;
+
+        // Check if user already exists
+        const existingUser = await collection.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User already exists' });
         }
 
+        // Hash the password
         const salt = await bcryptjs.genSalt(10);
-        const hash = await bcryptjs.hash(req.body.password, salt);
+        const hash = await bcryptjs.hash(password, salt);
 
-        const newUser = await collection.insertOne({
-            email: req.body.email,
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
+        const newUser = {
+            email,
+            firstName,
+            lastName,
             password: hash,
             createdAt: new Date()
-        });
+        };
 
-        const authtoken = jwt.sign({ user: { id: newUser.insertedId } }, JWT_SECRET);
-        logger.info('User registered successfully');
-        res.json({ authtoken, email: req.body.email });
+        await collection.insertOne(newUser);
+
+        // Generate JWT token
+        const payload = { user: { id: newUser._id, email: newUser.email } };
+        const authtoken = jwt.sign(payload, JWT_SECRET);
+
+        res.json({ authtoken, email: newUser.email, firstName: newUser.firstName });
     } catch (e) {
-        logger.error(e);
-        res.status(500).send('Internal server error');
+        console.error('Error registering user:', e);
+        res.status(500).send('Error registering user');
     }
 });
 
-// Login an existing user
+// Login user
 router.post('/login', async (req, res) => {
     try {
         const db = await connectToDatabase();
-        const collection = db.collection('users');
+        const collection = db.collection("users");
 
-        const theUser = await collection.findOne({ email: req.body.email });
+        const { email, password } = req.body;
+
+        const theUser = await collection.findOne({ email });
         if (!theUser) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const passwordMatch = await bcryptjs.compare(req.body.password, theUser.password);
-        if (!passwordMatch) {
-            return res.status(404).json({ error: 'Wrong password' });
+        const isMatch = await bcryptjs.compare(password, theUser.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Invalid credentials' });
         }
 
-        const authtoken = jwt.sign({ user: { id: theUser._id.toString() } }, JWT_SECRET);
-        res.json({ authtoken, userName: theUser.firstName, userEmail: theUser.email });
+        const payload = { user: { id: theUser._id, email: theUser.email } };
+        const authtoken = jwt.sign(payload, JWT_SECRET);
+
+        res.json({ authtoken, email: theUser.email, firstName: theUser.firstName });
     } catch (e) {
-        logger.error(e);
-        res.status(500).send('Internal server error');
+        console.error('Error logging in:', e);
+        res.status(500).send('Error logging in');
     }
 });
 
-// Update user information
+// Update user profile
 router.put('/update', async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
-        const email = req.headers.email;
-        if (!email) {
-            return res.status(400).json({ error: 'Email not found in the request headers' });
-        }
-
         const db = await connectToDatabase();
-        const collection = db.collection('users');
+        const collection = db.collection("users");
 
-        const existingUser = await collection.findOne({ email: email });
+        const { email, firstName, lastName } = req.body;
+
+        const existingUser = await collection.findOne({ email });
         if (!existingUser) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        existingUser.firstName = req.body.name || existingUser.firstName;
-        existingUser.updatedAt = new Date();
-
-        const updatedUser = await collection.findOneAndUpdate(
-            { email: email },
-            { $set: existingUser },
-            { returnDocument: 'after' }
+        await collection.updateOne(
+            { email },
+            { $set: { firstName, lastName, updatedAt: new Date() } }
         );
 
-        const authtoken = jwt.sign({ user: { id: existingUser._id.toString() } }, JWT_SECRET);
-        res.json({ authtoken });
+        const payload = { user: { id: existingUser._id, email } };
+        const authtoken = jwt.sign(payload, JWT_SECRET);
+
+        res.json({ authtoken, email, firstName, lastName });
     } catch (e) {
-        logger.error(e);
-        res.status(500).send('Internal server error');
+        console.error('Error updating user:', e);
+        res.status(500).send('Error updating user');
     }
 });
 
